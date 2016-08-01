@@ -98,7 +98,7 @@ function loadDailyData() {
                         dataType: 'json',
                         success: function (achievementData, achievementStatus, achievementRequest) {
                             achievements = achievementData;
-                            
+
                             for (var a = 0; a < achievements.length; a++) {
 
                                 console.log(achievements[a].name);
@@ -119,6 +119,29 @@ function loadDailyData() {
                                         if (scale != null) {
                                             achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
                                         }
+                                    }
+                                }
+
+                                // If this is a fractal achievement, add the scales information.
+                                if (achievements[a].bits) {
+                                    var scales = [];
+                                    var bits = achievements[a].bits;
+                                    // bits.text is like "Fractal Scale 25". Pretty verbose to string
+                                    // a bunch of those together, so use the full first string, which
+                                    // is nicely translated for us, and then just add the numbers after that.
+                                    var scaleRegex = /\d+/;
+
+                                    for (var i = 0; i < bits.length; i++) {
+                                        var scaleText = bits[i].text;
+                                        if (i == 0) {
+                                            scales.push(scaleText);
+                                        } else {
+                                            scales.push(bits[i].text.match(scaleRegex));
+                                        }
+                                    }
+                                    if (scales.length > 0) {
+                                        var reqsString = scales.join(", ");
+                                        achievements[a].requirement += " (" + reqsString + ")";
                                     }
                                 }
                             }
