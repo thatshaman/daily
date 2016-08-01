@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Guild Wars 2 - Daily Achievements</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.js"></script>
+    <link href="src/manifest.json" rel="manifest">
+    <link href="https://d1h9a8s8eodvjz.cloudfront.net/fonts/menomonia/08-02-12/menomonia.css" rel="stylesheet" />
+    <link href="https://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.css" rel="stylesheet" />
+    <link href="src/StyleSheet.css" rel="stylesheet" />
+    
+    <script src="src/fractals.js"></script>
+    <script src="src/app.js"></script>
+
+</head>
+<body>
+    <div data-role="page" class="type-interior" data-theme="a" id="mainPage">
+        <div data-role="content">
+            <ul id="items" data-icon="false" data-role="listview" data-filter="true" data-filter-placeholder="Search..." data-inset="true"></ul>
+        </div>
+        <div data-role="content" style="text-align:center">
+            <a href="?lang=en" data-ajax="false"><img src="en.png" /></a>
+            <a href="?lang=de" data-ajax="false"><img src="de.png" /></a>
+            <a href="?lang=fr" data-ajax="false"><img src="fr.png" /></a>
+            <a href="?lang=es" data-ajax="false"><img src="es.png" /></a>
+            <a href="?lang=zh" data-ajax="false"><img src="cn.png" /></a>
+        </div>
+    </div>
+    <div data-role="page" class="type-interior" data-theme="a" id="dialog">
+        <div data-role="header">
+            <h1>Details</h1>
+            <a href="#" data-icon="back" data-rel="back" title="Go back">Back</a>
+        </div>
+
+        <div data-role="main" class="ui-content">
+            <h1 id="title"></h1>
+            <p id="description"></p>
+        </div>
+    </div>
+</body>
+</html>
