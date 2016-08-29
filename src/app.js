@@ -1,4 +1,5 @@
-﻿var dailyURL = "https://api.guildwars2.com/v2/achievements/daily";
+﻿var daily_URL_today = "https://api.guildwars2.com/v2/achievements/daily";
+
 var fractalURL = "https://api.guildwars2.com/v2/achievements/categories/88";
 var achievementsURL = "https://api.guildwars2.com/v2/achievements";
 var dailies = {};
@@ -36,14 +37,34 @@ var lang = "en";
 
 $(document).ready(function () {
     if (urlParams["lang"] !== undefined) lang = urlParams["lang"].toLowerCase();
-    loadDailyData();
+
+    $("#link_today").click(function () {
+        loadDailyData(daily_URL_today);
+    });
+
+    $("#link_tomorrow").click(function () {
+    });
+
+    loadDailyData(daily_URL_today);
 });
 
+function clearGlobalVars() {
+    dailies = {};
+    achievements = {};
+    pve = [];
+    pveh = [];
+    pvp = [];
+    wvw = [];
+    special = [];
+    fractals = [];
+}
 
+function loadDailyData(url) {
 
-function loadDailyData() {
+    clearGlobalVars();
+
     jQuery.ajax({
-        url: dailyURL,
+        url: url,
         async: false,
         dataType: 'json',
         success: function (data, status, request) {
@@ -158,6 +179,9 @@ function loadDailyData() {
 
 function fillList() {
 
+    var items = $("#items");
+    items.empty();
+
     if (special.length > 0) {
         $("<li data-role='list-divider'>Special</li>").appendTo(items);
         for (var x = 0; x < special.length; x++) {
@@ -169,7 +193,6 @@ function fillList() {
         }
     }
 
-    var items = $("#items");
     $("<li data-role='list-divider'>PvE</li>").appendTo(items);
     for (var x = 0; x < pve.length; x++) {
 
@@ -180,7 +203,7 @@ function fillList() {
         }
     }
 
-    $("<li data-role='list-divider'>PvE (hidden)</li>").appendTo(items);
+    $("<li data-role='list-divider'>PvE (low level)</li>").appendTo(items);
     for (var x = 0; x < pveh.length; x++) {
 
         for (var i = 0; i < achievements.length; i++) {
@@ -226,8 +249,6 @@ function createEntry(achievement) {
     var name = achievement.name;
 
     var requirement = achievement.requirement;
-
-
 
     retval.html("<a href='javascript:showDetails(" + achievement.id + ")'><img src='" + icon + "' style='width:24px; height:24px' /><h1>" + name + "</h1><span style='font-size: 9pt'>" + requirement + "</span></a>");
 

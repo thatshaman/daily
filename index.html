@@ -16,9 +16,16 @@
 </head>
 <body>
     <div data-role="page" class="type-interior" data-theme="a" id="mainPage">
+        <div data-role="navbar" data-iconpos="left" data-position="fixed">
+            <ul>
+                <li><a href="#" data-ajax="false" class="ui-btn ui-btn-icon-none ui-btn-active" data-icon="calendar" id="link_today">Today</a></li>
+                <li><a href="#" data-ajax="false" class="ui-btn ui-btn-icon-none" data-icon="calendar" id="link_tomorrow">Tomorrow</a></li>
+            </ul>
+        </div>
         <div data-role="content">
             <ul id="items" data-icon="false" data-role="listview" data-filter="true" data-filter-placeholder="Search..." data-inset="true"></ul>
         </div>
+ 
         <div data-role="content" style="text-align:center">
             <a href="?lang=en" data-ajax="false"><img src="en.png" /></a>
             <a href="?lang=de" data-ajax="false"><img src="de.png" /></a>
@@ -30,7 +37,7 @@
     <div data-role="page" class="type-interior" data-theme="a" id="dialog">
         <div data-role="header">
             <h1>Details</h1>
-            <a href="#" data-icon="back" data-rel="back" title="Go back">Back</a>
+            <a data-icon="back" data-rel="back" title="Go back">Back</a>
         </div>
 
         <div data-role="main" class="ui-content">
