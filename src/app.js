@@ -1,4 +1,5 @@
 ﻿var daily_URL_today = "https://api.guildwars2.com/v2/achievements/daily";
+var daily_URL_tomorrow = "https://api.guildwars2.com/v2/achievements/daily/tomorrow";
 
 var fractalURL = "https://api.guildwars2.com/v2/achievements/categories/88";
 var achievementsURL = "https://api.guildwars2.com/v2/achievements";
@@ -43,6 +44,7 @@ $(document).ready(function () {
     });
 
     $("#link_tomorrow").click(function () {
+        loadDailyData(daily_URL_tomorrow);
     });
 
     loadDailyData(daily_URL_today);
