@@ -40,14 +40,14 @@ $(document).ready(function () {
     if (urlParams["lang"] !== undefined) lang = urlParams["lang"].toLowerCase();
 
     $("#link_today").click(function () {
-        loadDailyData(daily_URL_today);
+        loadDailyData(daily_URL_today, true);
     });
 
     $("#link_tomorrow").click(function () {
-        loadDailyData(daily_URL_tomorrow);
+        loadDailyData(daily_URL_tomorrow, false);
     });
 
-    loadDailyData(daily_URL_today);
+    loadDailyData(daily_URL_today, true);
 });
 
 function clearGlobalVars() {
@@ -61,11 +61,11 @@ function clearGlobalVars() {
     fractals = [];
 }
 
-function loadDailyData(url) {
+function loadDailyData(url, showFractals) {
 
     clearGlobalVars();
 
-    jQuery.ajax({
+    $.ajax({
         url: url,
         async: false,
         dataType: 'json',
@@ -104,77 +104,84 @@ function loadDailyData(url) {
                 special.push(dailies.special[i].id);
             }
 
-            jQuery.ajax({
-                url: fractalURL,
-                async: false,
-                dataType: 'json',
-                success: function (fractalData, fractalStatus, fractalRequest) {
+            if (showFractals) {
+                $.ajax({
+                    url: fractalURL,
+                    async: false,
+                    dataType: 'json',
+                    success: function (fractalData, fractalStatus, fractalRequest) {
 
-                    for (var f = 0; f < fractalData.achievements.length; f++) {
-                        buffer.push(fractalData.achievements[f]);
-                        fractals.push(fractalData.achievements[f]);
-                    }
-
-                    jQuery.ajax({
-                        url: achievementsURL + "?ids=" + buffer.toString() + "&lang=" + lang,
-                        async: false,
-                        dataType: 'json',
-                        success: function (achievementData, achievementStatus, achievementRequest) {
-                            achievements = achievementData;
-
-                            for (var a = 0; a < achievements.length; a++) {
-
-                                console.log(achievements[a].name);
-                                console.log(achievements[a].requirement);
-
-                                if (lang == "en" || lang == "de" || lang == "es") {
-                                    for (var i = 0; i < fractalsRegex[lang].length; i++) {
-                                        var scale = achievements[a].name.match(fractalsRegex[lang][i]);
-                                        if (scale != null) {
-                                            achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
-                                        }
-                                    }
-                                } else if (lang == "fr") {
-
-                                    // French unicode output is a mess..
-                                    if (achievements[a].name.replace(/[^\w\s]/gi, '').indexOf("Fractale quotidienne") > -1) {
-                                        var scale = achievements[a].name.match(/\d+/);
-                                        if (scale != null) {
-                                            achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
-                                        }
-                                    }
-                                }
-
-                                // If this is a fractal achievement, add the scales information.
-                                if (achievements[a].bits) {
-                                    var scales = [];
-                                    var bits = achievements[a].bits;
-                                    // bits.text is like "Fractal Scale 25". Pretty verbose to string
-                                    // a bunch of those together, so use the full first string, which
-                                    // is nicely translated for us, and then just add the numbers after that.
-                                    var scaleRegex = /\d+/;
-
-                                    for (var i = 0; i < bits.length; i++) {
-                                        var scaleText = bits[i].text;
-                                        if (i == 0) {
-                                            scales.push(scaleText);
-                                        } else {
-                                            scales.push(bits[i].text.match(scaleRegex));
-                                        }
-                                    }
-                                    if (scales.length > 0) {
-                                        var reqsString = scales.join(", ");
-                                        achievements[a].requirement += " (" + reqsString + ")";
-                                    }
-                                }
-                            }
-                            fillList();
+                        for (var f = 0; f < fractalData.achievements.length; f++) {
+                            buffer.push(fractalData.achievements[f]);
+                            fractals.push(fractalData.achievements[f]);
                         }
-                    });
-                }
-            });
 
+                        $.ajax({
+                            url: achievementsURL + "?ids=" + buffer.toString() + "&lang=" + lang,
+                            async: false,
+                            dataType: 'json',
+                            success: function (achievementData, achievementStatus, achievementRequest) {
+                                achievements = achievementData;
 
+                                for (var a = 0; a < achievements.length; a++) {
+
+                                    if (lang == "en" || lang == "de" || lang == "es") {
+                                        for (var i = 0; i < fractalsRegex[lang].length; i++) {
+                                            var scale = achievements[a].name.match(fractalsRegex[lang][i]);
+                                            if (scale != null) {
+                                                achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
+                                            }
+                                        }
+                                    } else if (lang == "fr") {
+
+                                        // French unicode output is a mess..
+                                        if (achievements[a].name.replace(/[^\w\s]/gi, '').indexOf("Fractale quotidienne") > -1) {
+                                            var scale = achievements[a].name.match(/\d+/);
+                                            if (scale != null) {
+                                                achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
+                                            }
+                                        }
+                                    }
+
+                                    // If this is a fractal achievement, add the scales information.
+                                    if (achievements[a].bits) {
+                                        var scales = [];
+                                        var bits = achievements[a].bits;
+                                        // bits.text is like "Fractal Scale 25". Pretty verbose to string
+                                        // a bunch of those together, so use the full first string, which
+                                        // is nicely translated for us, and then just add the numbers after that.
+                                        var scaleRegex = /\d+/;
+
+                                        for (var i = 0; i < bits.length; i++) {
+                                            var scaleText = bits[i].text;
+                                            if (i == 0) {
+                                                scales.push(scaleText);
+                                            } else {
+                                                scales.push(bits[i].text.match(scaleRegex));
+                                            }
+                                        }
+                                        if (scales.length > 0) {
+                                            var reqsString = scales.join(", ");
+                                            achievements[a].requirement += " (" + reqsString + ")";
+                                        }
+                                    }
+                                }
+                                fillList();
+                            }
+                        });
+                    }
+                });
+            } else {
+                $.ajax({
+                    url: achievementsURL + "?ids=" + buffer.toString() + "&lang=" + lang,
+                    async: false,
+                    dataType: 'json',
+                    success: function (achievementData, achievementStatus, achievementRequest) {
+                        achievements = achievementData;
+                        fillList();
+                    }
+                });
+            }
         }
     });
 }
@@ -233,11 +240,13 @@ function fillList() {
         }
     }
 
-    $("<li data-role='list-divider'>Fractals</li>").appendTo(items);
-    for (var x = 0; x < fractals.length; x++) {
-        for (var i = 0; i < achievements.length; i++) {
-            if (fractals[x] == achievements[i].id) {
-                createEntry(achievements[i]).appendTo(items);
+    if (fractals.length > 0) {
+        $("<li data-role='list-divider'>Fractals</li>").appendTo(items);
+        for (var x = 0; x < fractals.length; x++) {
+            for (var i = 0; i < achievements.length; i++) {
+                if (fractals[x] == achievements[i].id) {
+                    createEntry(achievements[i]).appendTo(items);
+                }
             }
         }
     }
