@@ -262,21 +262,21 @@ function fillList() {
         }
     }
 
-    // Player vs Player
-    $("<li data-role='list-divider'>PvP</li>").appendTo(items);
-    for (var x = 0; x < categories.pvp.length; x++) {
-        for (var i = 0; i < achievements.length; i++) {
-            if (categories.pvp[x] == achievements[i].id) {
-                createEntry(achievements[i]).appendTo(items);
-            }
-        }
-    }
-
     // World vs World
     $("<li data-role='list-divider'>WvW</li>").appendTo(items);
     for (var x = 0; x < categories.wvw.length; x++) {
         for (var i = 0; i < achievements.length; i++) {
             if (categories.wvw[x] == achievements[i].id) {
+                createEntry(achievements[i]).appendTo(items);
+            }
+        }
+    }
+
+    // Player vs Player
+    $("<li data-role='list-divider'>PvP</li>").appendTo(items);
+    for (var x = 0; x < categories.pvp.length; x++) {
+        for (var i = 0; i < achievements.length; i++) {
+            if (categories.pvp[x] == achievements[i].id) {
                 createEntry(achievements[i]).appendTo(items);
             }
         }
