@@ -304,7 +304,7 @@ function createEntry(achievement) {
     /// <returns type="Object">ListViewItem</returns>
 
     var retval = $("<li/>");
-    var icon = achievement.icon || "https://render.guildwars2.com/file/1273C427032320DDDB63062C140E72DCB0D9B411/502087.png";
+    var icon = achievement.icon || "https://render.guildwars2.com/file/483E3939D1A7010BDEA2970FB27703CAAD5FBB0F/42684.png";
     var name = achievement.name;
 
     var requirement = achievement.requirement;
