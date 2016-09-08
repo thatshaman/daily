@@ -7,6 +7,7 @@ var dailies = {};
 var achievements = {};
 
 var pve = [];
+var pvec = [];
 var pveh = [];
 var pvp = [];
 var wvw = [];
@@ -54,6 +55,7 @@ function clearGlobalVars() {
     dailies = {};
     achievements = {};
     pve = [];
+    pvec = [];
     pveh = [];
     pvp = [];
     wvw = [];
@@ -77,8 +79,20 @@ function loadDailyData(url, showFractals) {
 
             for (var i = 0; i < dailies.pve.length; i++) {
                 if (dailies.pve[i].level.max == 80) {
+                    
                     buffer.push(dailies.pve[i].id);
-                    pve.push(dailies.pve[i].id);
+
+                    // Check if achievement is available for HoT accounts
+                    if ($.inArray("HeartOfThorns", dailies.pve[i].required_access) > -1)
+                    {
+                        pve.push(dailies.pve[i].id);
+                    }
+
+                    // Check if achievement is available for core / F2P accounts
+                    if ($.inArray("GuildWars2", dailies.pve[i].required_access) > -1)
+                    {
+                        pvec.push(dailies.pve[i].id);
+                    }
                 } else {
                     buffer.push(dailies.pve[i].id);
                     pveh.push(dailies.pve[i].id);
@@ -202,7 +216,7 @@ function fillList() {
         }
     }
 
-    $("<li data-role='list-divider'>PvE</li>").appendTo(items);
+    $("<li data-role='list-divider'>PvE (Heart of Thorns)</li>").appendTo(items);
     for (var x = 0; x < pve.length; x++) {
 
         for (var i = 0; i < achievements.length; i++) {
@@ -212,7 +226,17 @@ function fillList() {
         }
     }
 
-    $("<li data-role='list-divider'>PvE (low level)</li>").appendTo(items);
+    $("<li data-role='list-divider'>PvE (Core &amp; Free to Play)</li>").appendTo(items);
+    for (var x = 0; x < pvec.length; x++) {
+
+        for (var i = 0; i < achievements.length; i++) {
+            if (pvec[x] == achievements[i].id) {
+                createEntry(achievements[i]).appendTo(items);
+            }
+        }
+    }
+
+    $("<li data-role='list-divider'>PvE (Low Level)</li>").appendTo(items);
     for (var x = 0; x < pveh.length; x++) {
 
         for (var i = 0; i < achievements.length; i++) {
