@@ -1,18 +1,15 @@
-﻿var daily_URL_today = "https://api.guildwars2.com/v2/achievements/daily";
-var daily_URL_tomorrow = "https://api.guildwars2.com/v2/achievements/daily/tomorrow";
-
+﻿// API endpoints
+var dailyURLToday = "https://api.guildwars2.com/v2/achievements/daily";
+var dailyURLTomorrow = "https://api.guildwars2.com/v2/achievements/daily/tomorrow";
 var fractalURL = "https://api.guildwars2.com/v2/achievements/categories/88";
 var achievementsURL = "https://api.guildwars2.com/v2/achievements";
+
+// Global cache for API data
 var dailies = {};
 var achievements = {};
+var categories = { "pve": [], "pveCore": [], "pveLowLevel": [], "pvp": [], "wvw": [], "special": [], "fractals": [] };
 
-var pve = [];
-var pvec = [];
-var pveh = [];
-var pvp = [];
-var wvw = [];
-var special = [];
-var fractals = [];
+// Regular expressions used to determine fractal names
 var fractalsRegex =
     {
         "en": [/^Daily Recommended Fractal—Scale (\d+)$/i],
@@ -22,12 +19,15 @@ var fractalsRegex =
         "zh": ["Not implemented"],
     }
 
+// Fixed Id's for world boss achievements
 var bosses = [2025, 1930, 1933, 1934, 2026, 1935];
 
+// URL parameters + hash
 var urlParams = {};
 var hashParams = {};
 var lang = "en";
 
+// Parse URL parameters + hash
 (window.onpopstate = function () {
     var match, pl = /\+/g, search = /([^&=]+)=?([^&]*)/g, decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); }, query = window.location.search.substring(1);
     while (match = search.exec(query)) urlParams[decode(match[1])] = decode(match[2]);
@@ -36,37 +36,36 @@ var lang = "en";
     while (e = r.exec(q)) hashParams[d(e[1])] = d(e[2]);
 })();
 
-
+// Go go go
 $(document).ready(function () {
+
+    // Parse requested language
     if (urlParams["lang"] !== undefined) lang = urlParams["lang"].toLowerCase();
 
+    // Switch to today's dailies
     $("#link_today").click(function () {
-        loadDailyData(daily_URL_today, true);
+        loadDailyData(dailyURLToday, true);
     });
 
+    // Switch to tomorrow's dailies
     $("#link_tomorrow").click(function () {
-        loadDailyData(daily_URL_tomorrow, false);
+        loadDailyData(dailyURLTomorrow, false);
     });
 
-    loadDailyData(daily_URL_today, true);
+    // Load today's dailies by default
+    loadDailyData(dailyURLToday, true);
 });
 
-function clearGlobalVars() {
-    dailies = {};
-    achievements = {};
-    pve = [];
-    pvec = [];
-    pveh = [];
-    pvp = [];
-    wvw = [];
-    special = [];
-    fractals = [];
-}
 
 function loadDailyData(url, showFractals) {
+    /// <summary>Loads data from the API</summary>
+    /// <param name="url" type="String">API endpoint.</param>
+    /// <param name="showFractals" type="Boolean">Show fractal data.</param>
 
-    clearGlobalVars();
+    // Reset data
+    categories = { "pve": [], "pveCore": [], "pveLowLevel": [], "pvp": [], "wvw": [], "special": [], "fractals": [] };
 
+    // Fetch daily data
     $.ajax({
         url: url,
         async: false,
@@ -74,50 +73,54 @@ function loadDailyData(url, showFractals) {
         success: function (data, status, request) {
 
             dailies = data;
+            var requestBuffer = [];
 
-            var buffer = [];
-
+            // Player versus environment
             for (var i = 0; i < dailies.pve.length; i++) {
+
+                // Check if achievement is available for max level characters
                 if (dailies.pve[i].level.max == 80) {
-                    
-                    buffer.push(dailies.pve[i].id);
+
+                    requestBuffer.push(dailies.pve[i].id);
 
                     // Check if achievement is available for HoT accounts
-                    if ($.inArray("HeartOfThorns", dailies.pve[i].required_access) > -1)
-                    {
-                        pve.push(dailies.pve[i].id);
+                    if ($.inArray("HeartOfThorns", dailies.pve[i].required_access) > -1) {
+                        categories.pve.push(dailies.pve[i].id);
                     }
 
                     // Check if achievement is available for core / F2P accounts
-                    if ($.inArray("GuildWars2", dailies.pve[i].required_access) > -1)
-                    {
-                        pvec.push(dailies.pve[i].id);
+                    if ($.inArray("GuildWars2", dailies.pve[i].required_access) > -1) {
+                        categories.pveCore.push(dailies.pve[i].id);
                     }
                 } else {
-                    buffer.push(dailies.pve[i].id);
-                    pveh.push(dailies.pve[i].id);
+                    requestBuffer.push(dailies.pve[i].id);
+                    categories.pveLowLevel.push(dailies.pve[i].id);
                 }
             }
 
+            // World vs World
             for (var i = 0; i < dailies.wvw.length; i++) {
                 if (dailies.wvw[i].level.max == 80) {
-                    buffer.push(dailies.wvw[i].id);
-                    wvw.push(dailies.wvw[i].id);
+                    requestBuffer.push(dailies.wvw[i].id);
+                    categories.wvw.push(dailies.wvw[i].id);
                 }
             }
 
+            // Player vs Player
             for (var i = 0; i < dailies.pvp.length; i++) {
                 if (dailies.pvp[i].level.max == 80) {
-                    buffer.push(dailies.pvp[i].id);
-                    pvp.push(dailies.pvp[i].id);
+                    requestBuffer.push(dailies.pvp[i].id);
+                    categories.pvp.push(dailies.pvp[i].id);
                 }
             }
 
+            // Special events (e.g. Wintersday, Halloween)
             for (var i = 0; i < dailies.special.length; i++) {
-                buffer.push(dailies.special[i].id);
-                special.push(dailies.special[i].id);
+                requestBuffer.push(dailies.special[i].id);
+                categories.special.push(dailies.special[i].id);
             }
 
+            // Only show fractals for today's page (not available for tomorrow's dailies) 
             if (showFractals) {
                 $.ajax({
                     url: fractalURL,
@@ -126,12 +129,13 @@ function loadDailyData(url, showFractals) {
                     success: function (fractalData, fractalStatus, fractalRequest) {
 
                         for (var f = 0; f < fractalData.achievements.length; f++) {
-                            buffer.push(fractalData.achievements[f]);
-                            fractals.push(fractalData.achievements[f]);
+                            requestBuffer.push(fractalData.achievements[f]);
+                            categories.fractals.push(fractalData.achievements[f]);
                         }
 
+                        // Fetch achievement details
                         $.ajax({
-                            url: achievementsURL + "?ids=" + buffer.toString() + "&lang=" + lang,
+                            url: achievementsURL + "?ids=" + requestBuffer.toString() + "&lang=" + lang,
                             async: false,
                             dataType: 'json',
                             success: function (achievementData, achievementStatus, achievementRequest) {
@@ -139,6 +143,7 @@ function loadDailyData(url, showFractals) {
 
                                 for (var a = 0; a < achievements.length; a++) {
 
+                                    // Parse fractal names
                                     if (lang == "en" || lang == "de" || lang == "es") {
                                         for (var i = 0; i < fractalsRegex[lang].length; i++) {
                                             var scale = achievements[a].name.match(fractalsRegex[lang][i]);
@@ -161,6 +166,7 @@ function loadDailyData(url, showFractals) {
                                     if (achievements[a].bits) {
                                         var scales = [];
                                         var bits = achievements[a].bits;
+
                                         // bits.text is like "Fractal Scale 25". Pretty verbose to string
                                         // a bunch of those together, so use the full first string, which
                                         // is nicely translated for us, and then just add the numbers after that.
@@ -180,18 +186,24 @@ function loadDailyData(url, showFractals) {
                                         }
                                     }
                                 }
+
+                                // Start filling the list with entries
                                 fillList();
                             }
                         });
                     }
                 });
             } else {
+
+                // Fetch achievement details
                 $.ajax({
-                    url: achievementsURL + "?ids=" + buffer.toString() + "&lang=" + lang,
+                    url: achievementsURL + "?ids=" + requestBuffer.toString() + "&lang=" + lang,
                     async: false,
                     dataType: 'json',
                     success: function (achievementData, achievementStatus, achievementRequest) {
                         achievements = achievementData;
+
+                        // Start filling the list with entries
                         fillList();
                     }
                 });
@@ -201,84 +213,96 @@ function loadDailyData(url, showFractals) {
 }
 
 function fillList() {
+    /// <summary>Populates the ListView</summary>
 
     var items = $("#items");
     items.empty();
 
-    if (special.length > 0) {
+    // Special events (e.g. Wintersday, Halloween)
+    if (categories.special.length > 0) {
         $("<li data-role='list-divider'>Special</li>").appendTo(items);
-        for (var x = 0; x < special.length; x++) {
+        for (var x = 0; x < categories.special.length; x++) {
             for (var i = 0; i < achievements.length; i++) {
-                if (special[x] == achievements[i].id) {
+                if (categories.special[x] == achievements[i].id) {
                     createEntry(achievements[i]).appendTo(items);
                 }
             }
         }
     }
 
+    // Player versus environment (Heart of Thorns)
     $("<li data-role='list-divider'>PvE (Heart of Thorns)</li>").appendTo(items);
-    for (var x = 0; x < pve.length; x++) {
-
+    for (var x = 0; x < categories.pve.length; x++) {
         for (var i = 0; i < achievements.length; i++) {
-            if (pve[x] == achievements[i].id) {
+            if (categories.pve[x] == achievements[i].id) {
                 createEntry(achievements[i]).appendTo(items);
             }
         }
     }
 
+    // Player versus environment (Core & F2P)
     $("<li data-role='list-divider'>PvE (Core &amp; Free to Play)</li>").appendTo(items);
-    for (var x = 0; x < pvec.length; x++) {
+    for (var x = 0; x < categories.pveCore.length; x++) {
 
         for (var i = 0; i < achievements.length; i++) {
-            if (pvec[x] == achievements[i].id) {
+            if (categories.pveCore[x] == achievements[i].id) {
                 createEntry(achievements[i]).appendTo(items);
             }
         }
     }
 
+    // Player versus environment (Low Level)
     $("<li data-role='list-divider'>PvE (Low Level)</li>").appendTo(items);
-    for (var x = 0; x < pveh.length; x++) {
+    for (var x = 0; x < categories.pveLowLevel.length; x++) {
 
         for (var i = 0; i < achievements.length; i++) {
-            if (pveh[x] == achievements[i].id) {
+            if (categories.pveLowLevel[x] == achievements[i].id) {
                 createEntry(achievements[i]).appendTo(items);
             }
         }
     }
 
+    // Player vs Player
     $("<li data-role='list-divider'>PvP</li>").appendTo(items);
-    for (var x = 0; x < pvp.length; x++) {
+    for (var x = 0; x < categories.pvp.length; x++) {
         for (var i = 0; i < achievements.length; i++) {
-            if (pvp[x] == achievements[i].id) {
+            if (categories.pvp[x] == achievements[i].id) {
                 createEntry(achievements[i]).appendTo(items);
             }
         }
     }
 
+    // World vs World
     $("<li data-role='list-divider'>WvW</li>").appendTo(items);
-    for (var x = 0; x < wvw.length; x++) {
+    for (var x = 0; x < categories.wvw.length; x++) {
         for (var i = 0; i < achievements.length; i++) {
-            if (wvw[x] == achievements[i].id) {
+            if (categories.wvw[x] == achievements[i].id) {
                 createEntry(achievements[i]).appendTo(items);
             }
         }
     }
 
-    if (fractals.length > 0) {
+    // Fractals of the Mists
+    if (categories.fractals.length > 0) {
         $("<li data-role='list-divider'>Fractals</li>").appendTo(items);
-        for (var x = 0; x < fractals.length; x++) {
+        for (var x = 0; x < categories.fractals.length; x++) {
             for (var i = 0; i < achievements.length; i++) {
-                if (fractals[x] == achievements[i].id) {
+                if (categories.fractals[x] == achievements[i].id) {
                     createEntry(achievements[i]).appendTo(items);
                 }
             }
         }
     }
 
+    // Refresh the updated listview
     items.listview("refresh");
 }
 
 function createEntry(achievement) {
+    /// <summary>Generate a ListView item</summary>
+    /// <param name="achievement" type="Integer">The Id of the achievement.</param>
+    /// <returns type="Object">ListViewItem</returns>
+
     var retval = $("<li/>");
     var icon = achievement.icon || "https://render.guildwars2.com/file/1273C427032320DDDB63062C140E72DCB0D9B411/502087.png";
     var name = achievement.name;
@@ -291,6 +315,9 @@ function createEntry(achievement) {
 }
 
 function showDetails(id) {
+    /// <summary>Shows detailed achievement data on a seperate page.</summary>
+    /// <param name="id" type="Integer">The Id of achievement.</param>
+
     var achievement = undefined;
     var link = "";
 
