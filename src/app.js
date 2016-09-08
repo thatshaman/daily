@@ -305,6 +305,6 @@ function showDetails(id) {
     if (achievement !== undefined) {
         if (achievement.name) $("#title").text(achievement.name);
         $("#description").html(achievement.requirement + link);
-        $.mobile.changePage("#dialog", { transition: "slide" });
+        $.mobile.changePage("#dialog", { transition: "flip" });
     }
 }
