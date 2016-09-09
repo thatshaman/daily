@@ -2,12 +2,12 @@
     "manifest_version": 2,
     "short_name": "GW2 Dailies",
     "name": "GW2 Dailies",
-    "version": "1.0",
+    "version": "1.1",
     "start_url": "http://daily.thatshaman.com/index.html",
     "display": "standalone",
     "icons": [
         {
-            "src": "https://render.guildwars2.com/file/1273C427032320DDDB63062C140E72DCB0D9B411/502087.png",
+            "src": "https://render.guildwars2.com/file/483E3939D1A7010BDEA2970FB27703CAAD5FBB0F/42684.png",
             "sizes": "64x64",
             "type": "image/png"
         }
