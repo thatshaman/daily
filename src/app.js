@@ -7,7 +7,7 @@ var achievementsURL = "https://api.guildwars2.com/v2/achievements";
 // Global cache for API data
 var dailies = {};
 var achievements = {};
-var categories = { "pve": [], "pveCore": [], "pveLowLevel": [], "pvp": [], "wvw": [], "special": [], "fractals": [] };
+var categories = { "pve": [], "pveCore": [], "lowLevel": [], "pvp": [], "wvw": [], "special": [], "fractals": [] };
 
 // Regular expressions used to determine fractal names
 var fractalsRegex =
@@ -63,7 +63,7 @@ function loadDailyData(url, showFractals) {
     /// <param name="showFractals" type="Boolean">Show fractal data.</param>
 
     // Reset data
-    categories = { "pve": [], "pveCore": [], "pveLowLevel": [], "pvp": [], "wvw": [], "special": [], "fractals": [] };
+    categories = { "pve": [], "pveCore": [], "lowLevel": [], "pvp": [], "wvw": [], "special": [], "fractals": [] };
 
     // Fetch daily data
     $.ajax({
@@ -78,10 +78,10 @@ function loadDailyData(url, showFractals) {
             // Player versus environment
             for (var i = 0; i < dailies.pve.length; i++) {
 
+                requestBuffer.push(dailies.pve[i].id);
+
                 // Check if achievement is available for max level characters
                 if (dailies.pve[i].level.max == 80) {
-
-                    requestBuffer.push(dailies.pve[i].id);
 
                     // Check if achievement is available for HoT accounts
                     if ($.inArray("HeartOfThorns", dailies.pve[i].required_access) > -1) {
@@ -92,25 +92,34 @@ function loadDailyData(url, showFractals) {
                     if ($.inArray("GuildWars2", dailies.pve[i].required_access) > -1) {
                         categories.pveCore.push(dailies.pve[i].id);
                     }
-                } else {
-                    requestBuffer.push(dailies.pve[i].id);
-                    categories.pveLowLevel.push(dailies.pve[i].id);
+                } else if (dailies.pve[i].level.min == 1) {
+                    categories.lowLevel.push(dailies.pve[i].id);
                 }
             }
 
             // World vs World
             for (var i = 0; i < dailies.wvw.length; i++) {
+                requestBuffer.push(dailies.wvw[i].id);
+
                 if (dailies.wvw[i].level.max == 80) {
-                    requestBuffer.push(dailies.wvw[i].id);
                     categories.wvw.push(dailies.wvw[i].id);
+                }
+
+                if (dailies.wvw[i].level.min == 1) {
+                    categories.lowLevel.push(dailies.wvw[i].id);
                 }
             }
 
             // Player vs Player
             for (var i = 0; i < dailies.pvp.length; i++) {
+                requestBuffer.push(dailies.pvp[i].id);
+
                 if (dailies.pvp[i].level.max == 80) {
-                    requestBuffer.push(dailies.pvp[i].id);
                     categories.pvp.push(dailies.pvp[i].id);
+                }
+
+                if (dailies.pvp[i].level.min == 1) {
+                    categories.lowLevel.push(dailies.pvp[i].id);
                 }
             }
 
@@ -251,17 +260,6 @@ function fillList() {
         }
     }
 
-    // Player versus environment (Low Level)
-    $("<li data-role='list-divider'>PvE (Low Level)</li>").appendTo(items);
-    for (var x = 0; x < categories.pveLowLevel.length; x++) {
-
-        for (var i = 0; i < achievements.length; i++) {
-            if (categories.pveLowLevel[x] == achievements[i].id) {
-                createEntry(achievements[i]).appendTo(items);
-            }
-        }
-    }
-
     // World vs World
     $("<li data-role='list-divider'>WvW</li>").appendTo(items);
     for (var x = 0; x < categories.wvw.length; x++) {
@@ -277,6 +275,17 @@ function fillList() {
     for (var x = 0; x < categories.pvp.length; x++) {
         for (var i = 0; i < achievements.length; i++) {
             if (categories.pvp[x] == achievements[i].id) {
+                createEntry(achievements[i]).appendTo(items);
+            }
+        }
+    }
+
+    // Low level (up to level 10)
+    $("<li data-role='list-divider'>Low Level</li>").appendTo(items);
+    for (var x = 0; x < categories.lowLevel.length; x++) {
+
+        for (var i = 0; i < achievements.length; i++) {
+            if (categories.lowLevel[x] == achievements[i].id) {
                 createEntry(achievements[i]).appendTo(items);
             }
         }
