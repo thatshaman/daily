@@ -50,3 +50,25 @@
     left: 20px;
     top: 10px;
 }
+
+/* desktop layout */
+
+@media only screen and (min-width: 980px) {
+    html {
+        background-color: #282828
+    }
+
+    .ui-page, ui-footer {
+        width: 980px !important;
+        margin: 0 auto !important;
+        position: relative !important;
+    }
+
+    body {
+    }
+
+    .ui-overlay-a {
+        background: none;
+        overflow-y: scroll;
+    }
+}
