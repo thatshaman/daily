@@ -172,14 +172,14 @@ function loadDailyData(url, showFractals) {
                                         }
                                     }
                                     if (scale != null) {
-                                        achievements[a].fractalType = "dailyRecommended";
+                                        achievements[a].dailyType = "fractalRecommended";
                                     }
 
                                     // If this is a fractal daily tier (1-4) achievement, add the scales information.
                                     if (achievements[a].bits) {
                                         var scales = [];
                                         var bits = achievements[a].bits;
-                                        achievements[a].fractalType = "dailyTier";
+                                        achievements[a].dailyType = "fractalTier";
 
                                         // bits.text is like "Fractal Scale 25". Pretty verbose to string
                                         // a bunch of those together, so use the full first string, which
@@ -299,22 +299,28 @@ function fillList() {
     // Fractals of the Mists
     if (categories.fractals.length > 0) {
         $("<li data-role='list-divider'>Fractals</li>").appendTo(items);
+
+        var recs = [];
+        var tiers = [];
+
         // Group daily recommended fractals first, then tiers
         for (var x = 0; x < categories.fractals.length; x++) {
             for (var i = 0; i < achievements.length; i++) {
-                if (categories.fractals[x] == achievements[i].id &&
-                    achievements[i].fractalType == "dailyRecommended") {
-                    createEntry(achievements[i]).appendTo(items);
+                if (categories.fractals[x] == achievements[i].id) {
+                    var fractal = createEntry(achievements[i]);
+                    if (achievements[i].dailyType == 'fractalRecommended') {
+                        recs.push(fractal);
+                    } else if (achievements[i].dailyType == 'fractalTier') {
+                        tiers.push(fractal);
+                    }
                 }
             }
         }
-        for (var x = 0; x < categories.fractals.length; x++) {
-            for (var i = 0; i < achievements.length; i++) {
-                if (categories.fractals[x] == achievements[i].id &&
-                    achievements[i].fractalType == "dailyTier") {
-                    createEntry(achievements[i]).appendTo(items);
-                }
-            }
+        for (var x = 0; x < recs.length; x++) {
+            recs[x].appendTo(items);
+        }
+        for (var x = 0; x < tiers.length; x++) {
+            tiers[x].appendTo(items);
         }
     }
 
