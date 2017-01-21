@@ -152,10 +152,11 @@ function loadDailyData(url, showFractals) {
 
                                 for (var a = 0; a < achievements.length; a++) {
 
-                                    // Parse fractal names
+                                    // Parse fractal names for daily recommended fractals.
+                                    var scale = null;
                                     if (lang == "en" || lang == "de" || lang == "es") {
                                         for (var i = 0; i < fractalsRegex[lang].length; i++) {
-                                            var scale = achievements[a].name.match(fractalsRegex[lang][i]);
+                                            scale = achievements[a].name.match(fractalsRegex[lang][i]);
                                             if (scale != null) {
                                                 achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
                                             }
@@ -164,17 +165,21 @@ function loadDailyData(url, showFractals) {
 
                                         // French unicode output is a mess..
                                         if (achievements[a].name.replace(/[^\w\s]/gi, '').indexOf("Fractale quotidienne") > -1) {
-                                            var scale = achievements[a].name.match(/\d+/);
+                                            scale = achievements[a].name.match(/\d+/);
                                             if (scale != null) {
                                                 achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
                                             }
                                         }
                                     }
+                                    if (scale != null) {
+                                        achievements[a].fractalType = "dailyRecommended";
+                                    }
 
-                                    // If this is a fractal achievement, add the scales information.
+                                    // If this is a fractal daily tier (1-4) achievement, add the scales information.
                                     if (achievements[a].bits) {
                                         var scales = [];
                                         var bits = achievements[a].bits;
+                                        achievements[a].fractalType = "dailyTier";
 
                                         // bits.text is like "Fractal Scale 25". Pretty verbose to string
                                         // a bunch of those together, so use the full first string, which
@@ -294,9 +299,19 @@ function fillList() {
     // Fractals of the Mists
     if (categories.fractals.length > 0) {
         $("<li data-role='list-divider'>Fractals</li>").appendTo(items);
+        // Group daily recommended fractals first, then tiers
         for (var x = 0; x < categories.fractals.length; x++) {
             for (var i = 0; i < achievements.length; i++) {
-                if (categories.fractals[x] == achievements[i].id) {
+                if (categories.fractals[x] == achievements[i].id &&
+                    achievements[i].fractalType == "dailyRecommended") {
+                    createEntry(achievements[i]).appendTo(items);
+                }
+            }
+        }
+        for (var x = 0; x < categories.fractals.length; x++) {
+            for (var i = 0; i < achievements.length; i++) {
+                if (categories.fractals[x] == achievements[i].id &&
+                    achievements[i].fractalType == "dailyTier") {
                     createEntry(achievements[i]).appendTo(items);
                 }
             }
