@@ -3,10 +3,21 @@ var dailyURLToday = "https://api.guildwars2.com/v2/achievements/daily";
 var dailyURLTomorrow = "https://api.guildwars2.com/v2/achievements/daily/tomorrow";
 var fractalURL = "https://api.guildwars2.com/v2/achievements/categories/88";
 var achievementsURL = "https://api.guildwars2.com/v2/achievements";
+var rewardsURL = "https://api.guildwars2.com/v2/items";
+
+// URLs for each wiki page
+var wikiUrls = {
+    "en": "https://wiki.guildwars2.com/wiki/",
+    "de": "https://wiki-de.guildwars2.com/wiki/",
+    "fr": "https://wiki-fr.guildwars2.com/wiki/",
+    "es": "https://wiki-es.guildwars2.com/wiki/",
+    "zh": "https://wiki-es.guildwars2.com/wiki/"
+};
 
 // Global cache for API data
 var dailies = {};
 var achievements = {};
+var rewards = {};
 var categories = { "pve": [], "pveCore": [], "lowLevel": [], "pvp": [], "wvw": [], "special": [], "fractals": [] };
 
 // Regular expressions used to determine fractal names
@@ -73,12 +84,13 @@ function loadDailyData(url, showFractals) {
         success: function (data, status, request) {
 
             dailies = data;
-            var requestBuffer = [];
+            var achievementBuffer = [];
+
 
             // Player versus environment
             for (var i = 0; i < dailies.pve.length; i++) {
 
-                requestBuffer.push(dailies.pve[i].id);
+                achievementBuffer.push(dailies.pve[i].id);
 
                 // Check if achievement is available for max level characters
                 if (dailies.pve[i].level.max == 80) {
@@ -99,7 +111,7 @@ function loadDailyData(url, showFractals) {
 
             // World vs World
             for (var i = 0; i < dailies.wvw.length; i++) {
-                requestBuffer.push(dailies.wvw[i].id);
+                achievementBuffer.push(dailies.wvw[i].id);
 
                 if (dailies.wvw[i].level.max == 80) {
                     categories.wvw.push(dailies.wvw[i].id);
@@ -112,7 +124,7 @@ function loadDailyData(url, showFractals) {
 
             // Player vs Player
             for (var i = 0; i < dailies.pvp.length; i++) {
-                requestBuffer.push(dailies.pvp[i].id);
+                achievementBuffer.push(dailies.pvp[i].id);
 
                 if (dailies.pvp[i].level.max == 80) {
                     categories.pvp.push(dailies.pvp[i].id);
@@ -125,7 +137,7 @@ function loadDailyData(url, showFractals) {
 
             // Special events (e.g. Wintersday, Halloween)
             for (var i = 0; i < dailies.special.length; i++) {
-                requestBuffer.push(dailies.special[i].id);
+                achievementBuffer.push(dailies.special[i].id);
                 categories.special.push(dailies.special[i].id);
             }
 
@@ -138,13 +150,13 @@ function loadDailyData(url, showFractals) {
                     success: function (fractalData, fractalStatus, fractalRequest) {
 
                         for (var f = 0; f < fractalData.achievements.length; f++) {
-                            requestBuffer.push(fractalData.achievements[f]);
+                            achievementBuffer.push(fractalData.achievements[f]);
                             categories.fractals.push(fractalData.achievements[f]);
                         }
 
                         // Fetch achievement details
                         $.ajax({
-                            url: achievementsURL + "?ids=" + requestBuffer.toString() + "&lang=" + lang,
+                            url: achievementsURL + "?ids=" + achievementBuffer.toString() + "&lang=" + lang,
                             async: false,
                             dataType: 'json',
                             success: function (achievementData, achievementStatus, achievementRequest) {
@@ -201,8 +213,10 @@ function loadDailyData(url, showFractals) {
                                     }
                                 }
 
+                                // Fetch reward data
+
                                 // Start filling the list with entries
-                                fillList();
+                                loadRewardData();
                             }
                         });
                     }
@@ -211,19 +225,54 @@ function loadDailyData(url, showFractals) {
 
                 // Fetch achievement details
                 $.ajax({
-                    url: achievementsURL + "?ids=" + requestBuffer.toString() + "&lang=" + lang,
+                    url: achievementsURL + "?ids=" + achievementBuffer.toString() + "&lang=" + lang,
                     async: false,
                     dataType: 'json',
                     success: function (achievementData, achievementStatus, achievementRequest) {
                         achievements = achievementData;
-
-                        // Start filling the list with entries
-                        fillList();
+                        loadRewardData();
                     }
                 });
             }
         }
     });
+}
+
+function loadRewardData() {
+    /// <summary>Loads reward data from the API</summary>
+
+    var rewardBuffer = [];
+    for (i = 0; i < achievements.length; i++) {
+        for (r = 0; r < achievements[i].rewards.length; r++) {
+            rewardBuffer.push(achievements[i].rewards[r].id);
+
+        }
+    }
+
+    $.ajax({
+        url: rewardsURL + "?ids=" + rewardBuffer.toString() + "&lang=" + lang,
+        async: false,
+        dataType: 'json',
+        success: function (rewardData, rewardStatus, rewardRequest) {
+            rewards = rewardData;
+            fillList();
+        }
+    });
+}
+
+function getReward(id) {
+    /// <summary>Get a reward item from the rewards buffer</summary>
+    /// <param name="id" type="Integer">The Id of the reward item.</param>
+    /// <returns type="Object">Guild Wars 2 Item</returns>
+
+    for (var i = 0; i < rewards.length; i++) {
+        if (rewards[i].id == id) {
+            return rewards[i];
+            break;
+        }
+    }
+
+    return {};
 }
 
 function fillList() {
@@ -322,35 +371,43 @@ function createEntry(achievement) {
     /// <param name="achievement" type="Integer">The Id of the achievement.</param>
     /// <returns type="Object">ListViewItem</returns>
 
-    var retval = $("<li/>");
+    // TODO: clean these temporary things up and convert everything to CSS
+
+    var retval = $("<li data-iconpos='right' data-icon=''/>");
     var icon = achievement.icon || "https://render.guildwars2.com/file/483E3939D1A7010BDEA2970FB27703CAAD5FBB0F/42684.png";
-    var name = achievement.name;
 
-    var requirement = achievement.requirement;
+    var title = "<img src='" + icon + "' style='float:left' /> <span class='title'>" + achievement.name + "</span>";
+    var subtitle = "<span class='subtitle'>" + achievement.requirement + "</span>";
+    if (subtitle.length > 128) subtitle = subtitle.substring(0, 128) + '...';
+    var details = "";
 
-    retval.html("<a href='javascript:showDetails(" + achievement.id + ")'><img src='" + icon + "' style='width:24px; height:24px' /><h1>" + name + "</h1><span style='font-size: 9pt'>" + requirement + "</span></a>");
+    details += achievement.requirement + "<br/>";
+    if (achievement.description.length > 0) details += "<i>- " + achievement.description + "</i><br/>";
 
-    return retval;
-}
+    details += "<br/><div class='achievementDetails'>";
+    if (achievement.tiers[0].count > 1) details += "<b>Required:</b> " + achievement.tiers[0].count + "<br/>";
+    if (achievement.tiers[0].points > 0) details += "<b>Achievement Points:</b> " + achievement.tiers[0].points + "<br/>";
 
-function showDetails(id) {
-    /// <summary>Shows detailed achievement data on a seperate page.</summary>
-    /// <param name="id" type="Integer">The Id of achievement.</param>
+    if (achievement.rewards.length > 0) {
+        for (var i = 0; i < achievement.rewards.length; i++) {
+            var reward = getReward(achievement.rewards[i].id);
 
-    var achievement = undefined;
-    var link = "";
+            details += "<b>Reward:</b> <img src='" + reward.icon + "' style='width: 16px; height: 16px;'/> ";
 
-    if ($.inArray(id, bosses) > -1) link = "<br/><div style='width:100%; text-align:center'><a target='_blank' href='http://dulfy.net/2014/04/23/event-timer/'><img src='dulfy.png'/></div>"
+            // English will search by item chat code, other languages will search by name
+            if (lang == "en") {
+                details += "<a href='" + wikiUrls[lang] + "/?search=" + escape(reward.chat_link) + "' target='_blank'>" + reward.name + "</a>";
+            } else {
+                details += "<a href='" + wikiUrls[lang] + escape(reward.name) + "' target='_blank'>" + reward.name + "</a>";
+            }
 
-    for (var i = 0; i < achievements.length; i++) {
-        if (id == achievements[i].id) {
-            achievement = achievements[i];
+            if (achievement.rewards[i].count > 1) details += " (" + achievement.rewards[i].count + ")";
+            details += "<br/>";
         }
     }
+    details += "</div>";
 
-    if (achievement !== undefined) {
-        if (achievement.name) $("#title").text(achievement.name);
-        $("#description").html(achievement.requirement + link);
-        $.mobile.changePage("#dialog", { transition: "flip" });
-    }
+    retval.html("<h2>" + title+ "<br/>" + subtitle + "<div></h2><div style='white-space:normal !important;'>" + details + "</div>");
+    retval.collapsible();
+    return retval;
 }
