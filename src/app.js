@@ -152,10 +152,11 @@ function loadDailyData(url, showFractals) {
 
                                 for (var a = 0; a < achievements.length; a++) {
 
-                                    // Parse fractal names
+                                    // Parse fractal names for daily recommended fractals.
+                                    var scale = null;
                                     if (lang == "en" || lang == "de" || lang == "es") {
                                         for (var i = 0; i < fractalsRegex[lang].length; i++) {
-                                            var scale = achievements[a].name.match(fractalsRegex[lang][i]);
+                                            scale = achievements[a].name.match(fractalsRegex[lang][i]);
                                             if (scale != null) {
                                                 achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
                                             }
@@ -164,17 +165,21 @@ function loadDailyData(url, showFractals) {
 
                                         // French unicode output is a mess..
                                         if (achievements[a].name.replace(/[^\w\s]/gi, '').indexOf("Fractale quotidienne") > -1) {
-                                            var scale = achievements[a].name.match(/\d+/);
+                                            scale = achievements[a].name.match(/\d+/);
                                             if (scale != null) {
                                                 achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
                                             }
                                         }
                                     }
+                                    if (scale != null) {
+                                        achievements[a].dailyType = "fractalRecommended";
+                                    }
 
-                                    // If this is a fractal achievement, add the scales information.
+                                    // If this is a fractal daily tier (1-4) achievement, add the scales information.
                                     if (achievements[a].bits) {
                                         var scales = [];
                                         var bits = achievements[a].bits;
+                                        achievements[a].dailyType = "fractalTier";
 
                                         // bits.text is like "Fractal Scale 25". Pretty verbose to string
                                         // a bunch of those together, so use the full first string, which
@@ -227,79 +232,84 @@ function fillList() {
     var items = $("#items");
     items.empty();
 
+    // First, iterate over achievements once and make a dict so we can look
+    // things up easier below.
+    achievementsDict = {};
+    for (var i = 0; i < achievements.length; i++) {
+        var achievementID = achievements[i].id;
+        achievementsDict[achievementID] = achievements[i];
+    }
+
     // Special events (e.g. Wintersday, Halloween)
     if (categories.special.length > 0) {
         $("<li data-role='list-divider'>Special</li>").appendTo(items);
         for (var x = 0; x < categories.special.length; x++) {
-            for (var i = 0; i < achievements.length; i++) {
-                if (categories.special[x] == achievements[i].id) {
-                    createEntry(achievements[i]).appendTo(items);
-                }
-            }
+            var id = categories.special[x];
+            createEntry(achievementsDict[id]).appendTo(items);
         }
     }
 
     // Player versus environment (Heart of Thorns)
     $("<li data-role='list-divider'>PvE (Heart of Thorns)</li>").appendTo(items);
     for (var x = 0; x < categories.pve.length; x++) {
-        for (var i = 0; i < achievements.length; i++) {
-            if (categories.pve[x] == achievements[i].id) {
-                createEntry(achievements[i]).appendTo(items);
-            }
-        }
+        var id = categories.pve[x];
+        createEntry(achievementsDict[id]).appendTo(items);
     }
 
     // Player versus environment (Core & F2P)
     $("<li data-role='list-divider'>PvE (Core &amp; Free to Play)</li>").appendTo(items);
     for (var x = 0; x < categories.pveCore.length; x++) {
-
-        for (var i = 0; i < achievements.length; i++) {
-            if (categories.pveCore[x] == achievements[i].id) {
-                createEntry(achievements[i]).appendTo(items);
-            }
-        }
+        var id = categories.pveCore[x];
+        createEntry(achievementsDict[id]).appendTo(items);
     }
 
     // World vs World
     $("<li data-role='list-divider'>WvW</li>").appendTo(items);
     for (var x = 0; x < categories.wvw.length; x++) {
-        for (var i = 0; i < achievements.length; i++) {
-            if (categories.wvw[x] == achievements[i].id) {
-                createEntry(achievements[i]).appendTo(items);
-            }
-        }
+        var id = categories.wvw[x];
+        createEntry(achievementsDict[id]).appendTo(items);
     }
 
     // Player vs Player
     $("<li data-role='list-divider'>PvP</li>").appendTo(items);
     for (var x = 0; x < categories.pvp.length; x++) {
-        for (var i = 0; i < achievements.length; i++) {
-            if (categories.pvp[x] == achievements[i].id) {
-                createEntry(achievements[i]).appendTo(items);
-            }
-        }
+        var id = categories.pvp[x];
+        createEntry(achievementsDict[id]).appendTo(items);
     }
 
     // Low level (up to level 10)
     $("<li data-role='list-divider'>Low Level</li>").appendTo(items);
     for (var x = 0; x < categories.lowLevel.length; x++) {
-
-        for (var i = 0; i < achievements.length; i++) {
-            if (categories.lowLevel[x] == achievements[i].id) {
-                createEntry(achievements[i]).appendTo(items);
-            }
-        }
+        var id = categories.lowLevel[x];
+        createEntry(achievementsDict[id]).appendTo(items);
     }
 
     // Fractals of the Mists
     if (categories.fractals.length > 0) {
         $("<li data-role='list-divider'>Fractals</li>").appendTo(items);
+
+        var recs = [];
+        var tiers = [];
+
         for (var x = 0; x < categories.fractals.length; x++) {
-            for (var i = 0; i < achievements.length; i++) {
-                if (categories.fractals[x] == achievements[i].id) {
-                    createEntry(achievements[i]).appendTo(items);
-                }
+            var id = categories.fractals[x];
+            var achievement = achievementsDict[id];
+            var fractalEntry = createEntry(achievement);
+
+            if (achievement.dailyType == 'fractalRecommended') {
+                recs.push(fractalEntry);
+            } else if (achievement.dailyType == 'fractalTier') {
+                tiers.push(fractalEntry);
             }
+        }
+
+        // Group daily recommended fractals first, then tiers
+        for (var x = 0; x < recs.length; x++) {
+            recs[x].appendTo(items);
+        }
+
+        for (var x = 0; x < tiers.length; x++) {
+            tiers[x].appendTo(items);
         }
     }
 
