@@ -1,7 +1,6 @@
 ﻿// API endpoints
 var dailyURLToday = "https://api.guildwars2.com/v2/achievements/daily";
 var dailyURLTomorrow = "https://api.guildwars2.com/v2/achievements/daily/tomorrow";
-var fractalURL = "https://api.guildwars2.com/v2/achievements/categories/88";
 var achievementsURL = "https://api.guildwars2.com/v2/achievements";
 var rewardsURL = "https://api.guildwars2.com/v2/items";
 
@@ -135,105 +134,83 @@ function loadDailyData(url, showFractals) {
                 }
             }
 
+            // Fractals of the Mists
+            for (var i = 0; i < dailies.fractals.length; i++) {
+                achievementBuffer.push(dailies.fractals[i].id);
+                categories.fractals.push(dailies.fractals[i].id);
+            }
+
             // Special events (e.g. Wintersday, Halloween)
             for (var i = 0; i < dailies.special.length; i++) {
                 achievementBuffer.push(dailies.special[i].id);
                 categories.special.push(dailies.special[i].id);
             }
 
-            // Only show fractals for today's page (not available for tomorrow's dailies) 
-            if (showFractals) {
-                $.ajax({
-                    url: fractalURL,
-                    async: false,
-                    dataType: 'json',
-                    success: function (fractalData, fractalStatus, fractalRequest) {
 
-                        for (var f = 0; f < fractalData.achievements.length; f++) {
-                            achievementBuffer.push(fractalData.achievements[f]);
-                            categories.fractals.push(fractalData.achievements[f]);
+
+            // Fetch achievement details
+            $.ajax({
+                url: achievementsURL + "?ids=" + achievementBuffer.toString() + "&lang=" + lang,
+                async: false,
+                dataType: 'json',
+                success: function (achievementData, achievementStatus, achievementRequest) {
+                    achievements = achievementData;
+
+                    for (var a = 0; a < achievements.length; a++) {
+
+                        // Parse fractal names for daily recommended fractals.
+                        var scale = null;
+                        if (lang == "en" || lang == "de" || lang == "es") {
+                            for (var i = 0; i < fractalsRegex[lang].length; i++) {
+                                scale = achievements[a].name.match(fractalsRegex[lang][i]);
+                                if (scale != null) {
+                                    achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
+                                }
+                            }
+                        } else if (lang == "fr") {
+
+                            // French unicode output is a mess..
+                            if (achievements[a].name.replace(/[^\w\s]/gi, '').indexOf("Fractale quotidienne") > -1) {
+                                scale = achievements[a].name.match(/\d+/);
+                                if (scale != null) {
+                                    achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
+                                }
+                            }
+                        }
+                        if (scale != null) {
+                            achievements[a].dailyType = "fractalRecommended";
                         }
 
-                        // Fetch achievement details
-                        $.ajax({
-                            url: achievementsURL + "?ids=" + achievementBuffer.toString() + "&lang=" + lang,
-                            async: false,
-                            dataType: 'json',
-                            success: function (achievementData, achievementStatus, achievementRequest) {
-                                achievements = achievementData;
+                        // If this is a fractal daily tier (1-4) achievement, add the scales information.
+                        if (achievements[a].bits) {
+                            var scales = [];
+                            var bits = achievements[a].bits;
+                            achievements[a].dailyType = "fractalTier";
 
-                                for (var a = 0; a < achievements.length; a++) {
+                            // bits.text is like "Fractal Scale 25". Pretty verbose to string
+                            // a bunch of those together, so use the full first string, which
+                            // is nicely translated for us, and then just add the numbers after that.
+                            var scaleRegex = /\d+/;
 
-                                    // Parse fractal names for daily recommended fractals.
-                                    var scale = null;
-                                    if (lang == "en" || lang == "de" || lang == "es") {
-                                        for (var i = 0; i < fractalsRegex[lang].length; i++) {
-                                            scale = achievements[a].name.match(fractalsRegex[lang][i]);
-                                            if (scale != null) {
-                                                achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
-                                            }
-                                        }
-                                    } else if (lang == "fr") {
-
-                                        // French unicode output is a mess..
-                                        if (achievements[a].name.replace(/[^\w\s]/gi, '').indexOf("Fractale quotidienne") > -1) {
-                                            scale = achievements[a].name.match(/\d+/);
-                                            if (scale != null) {
-                                                achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
-                                            }
-                                        }
-                                    }
-                                    if (scale != null) {
-                                        achievements[a].dailyType = "fractalRecommended";
-                                    }
-
-                                    // If this is a fractal daily tier (1-4) achievement, add the scales information.
-                                    if (achievements[a].bits) {
-                                        var scales = [];
-                                        var bits = achievements[a].bits;
-                                        achievements[a].dailyType = "fractalTier";
-
-                                        // bits.text is like "Fractal Scale 25". Pretty verbose to string
-                                        // a bunch of those together, so use the full first string, which
-                                        // is nicely translated for us, and then just add the numbers after that.
-                                        var scaleRegex = /\d+/;
-
-                                        for (var i = 0; i < bits.length; i++) {
-                                            var scaleText = bits[i].text;
-                                            if (i == 0) {
-                                                scales.push(scaleText);
-                                            } else {
-                                                scales.push(bits[i].text.match(scaleRegex));
-                                            }
-                                        }
-                                        if (scales.length > 0) {
-                                            var reqsString = scales.join(", ");
-                                            achievements[a].requirement += " (" + reqsString + ")";
-                                        }
-                                    }
+                            for (var i = 0; i < bits.length; i++) {
+                                var scaleText = bits[i].text;
+                                if (i == 0) {
+                                    scales.push(scaleText);
+                                } else {
+                                    scales.push(bits[i].text.match(scaleRegex));
                                 }
-
-                                // Fetch reward data
-
-                                // Start filling the list with entries
-                                loadRewardData();
                             }
-                        });
+                            if (scales.length > 0) {
+                                var reqsString = scales.join(", ");
+                                achievements[a].requirement += " (" + reqsString + ")";
+                            }
+                        }
                     }
-                });
-            } else {
 
-                // Fetch achievement details
-                $.ajax({
-                    url: achievementsURL + "?ids=" + achievementBuffer.toString() + "&lang=" + lang,
-                    async: false,
-                    dataType: 'json',
-                    success: function (achievementData, achievementStatus, achievementRequest) {
-                        achievements = achievementData;
-                        loadRewardData();
-                    }
-                });
-            }
+                    // Start filling the list with entries
+                    loadRewardData();
+                }
+            });
         }
     });
 }
@@ -407,7 +384,7 @@ function createEntry(achievement) {
     }
     details += "</div>";
 
-    retval.html("<h2>" + title+ "<br/>" + subtitle + "<div></h2><div style='white-space:normal !important;'>" + details + "</div>");
+    retval.html("<h2>" + title + "<br/>" + subtitle + "<div></h2><div style='white-space:normal !important;'>" + details + "</div>");
     retval.collapsible();
     return retval;
 }
