@@ -94,15 +94,22 @@ function loadDailyData(url, showFractals) {
                 // Check if achievement is available for max level characters
                 if (dailies.pve[i].level.max == 80) {
 
+                    //
+                    // Temporary fix:
+                    //    There's an unresolved API bug with the required_access field
+                    //    Grouping has been disabled until further notice.
+                    //    More information: https://github.com/arenanet/api-cdi/issues/574
+                    //
+
                     // Check if achievement is available for HoT accounts
-                    if ($.inArray("HeartOfThorns", dailies.pve[i].required_access) > -1) {
+                    //if ($.inArray("HeartOfThorns", dailies.pve[i].required_access) > -1) {
                         categories.pve.push(dailies.pve[i].id);
-                    }
+                    //}
 
                     // Check if achievement is available for core / F2P accounts
-                    if ($.inArray("GuildWars2", dailies.pve[i].required_access) > -1) {
+                    /*if ($.inArray("GuildWars2", dailies.pve[i].required_access) > -1) {
                         categories.pveCore.push(dailies.pve[i].id);
-                    }
+                    }*/
                 } else if (dailies.pve[i].level.min == 1) {
                     categories.lowLevel.push(dailies.pve[i].id);
                 }
@@ -276,7 +283,7 @@ function fillList() {
     }
 
     // Player versus environment (Heart of Thorns)
-    $("<li data-role='list-divider'>PvE (Heart of Thorns)</li>").appendTo(items);
+    $("<li data-role='list-divider'>PvE</li>").appendTo(items);
     for (var x = 0; x < categories.pve.length; x++) {
         var id = categories.pve[x];
         createEntry(achievementsDict[id]).appendTo(items);
