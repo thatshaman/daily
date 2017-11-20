@@ -17,7 +17,7 @@ var wikiUrls = {
 var dailies = {};
 var achievements = {};
 var rewards = {};
-var categories = { "pve": [], "pveCore": [], "lowLevel": [], "pvp": [], "wvw": [], "special": [], "fractals": [] };
+var categories = {};
 
 // Regular expressions used to determine fractal names
 var fractalsRegex =
@@ -31,6 +31,9 @@ var fractalsRegex =
 
 // Fixed Id's for world boss achievements
 var bosses = [2025, 1930, 1933, 1934, 2026, 1935];
+
+// Fixed Id's for world dungeon achievements
+var dungeons = [2893, 2914, 2959, 2917, 2901, 2931, 2953, 2938];
 
 // URL parameters + hash
 var urlParams = {};
@@ -73,7 +76,7 @@ function loadDailyData(url, showFractals) {
     /// <param name="showFractals" type="Boolean">Show fractal data.</param>
 
     // Reset data
-    categories = { "pve": [], "pveCore": [], "lowLevel": [], "pvp": [], "wvw": [], "special": [], "fractals": [] };
+    categories = { "pve": [], "pvePoF": [], "pveHoT": [], "pveCore": [], "lowLevel": [], "pvp": [], "wvw": [], "special": [], "fractals": [] };
 
     // Fetch daily data
     $.ajax({
@@ -86,6 +89,44 @@ function loadDailyData(url, showFractals) {
             var achievementBuffer = [];
 
 
+            //
+            // Temporary fix:
+            //    There's an unresolved API bug with the required_access field
+            //    More information: https://github.com/arenanet/api-cdi/issues/574
+            //
+            var hasHoTDaily = false;
+            var hasPoFDaily = false;
+            var lowestCoreLevel = 99;
+            var lowestCoreId = 0;
+
+            for (var i = 0; i < dailies.pve.length; i++) {
+
+                if (dailies.pve[i].level.max == 80 && dailies.pve[i].level.min < lowestCoreLevel) {
+                    lowestCoreLevel = dailies.pve[i].level.min;
+                    lowestCoreId = i;
+                }
+
+                if (dailies.pve[i].id > 2800 && dailies.pve[i].id < 3100) {
+                    if ($.inArray(dailies.pve[i].id, dungeons) == -1) {
+                        dailies.pve[i].required_access = ["HeartOfThorns"];
+                        hasHoTDaily = true;
+                    }
+                } else if (dailies.pve[i].id > 3100) {
+                    dailies.pve[i].required_access = ["PathOfFire"];
+                    hasPoFDaily = true;
+                } else {
+                    dailies.pve[i].required_access = ["GuildWars2"];
+                }
+            }
+            
+            if (hasPoFDaily || hasHoTDaily) {
+                dailies.pve[lowestCoreId].required_access = ["Core"];
+            }
+
+            //
+            //
+            //
+
             // Player versus environment
             for (var i = 0; i < dailies.pve.length; i++) {
 
@@ -94,22 +135,26 @@ function loadDailyData(url, showFractals) {
                 // Check if achievement is available for max level characters
                 if (dailies.pve[i].level.max == 80) {
 
-                    //
-                    // Temporary fix:
-                    //    There's an unresolved API bug with the required_access field
-                    //    Grouping has been disabled until further notice.
-                    //    More information: https://github.com/arenanet/api-cdi/issues/574
-                    //
+                    // Check if achievement is available for HoT accounts
+                    if ($.inArray("PathOfFire", dailies.pve[i].required_access) > -1) {
+                        categories.pvePoF.push(dailies.pve[i].id);
+                    }
 
                     // Check if achievement is available for HoT accounts
-                    //if ($.inArray("HeartOfThorns", dailies.pve[i].required_access) > -1) {
-                        categories.pve.push(dailies.pve[i].id);
-                    //}
+                    if ($.inArray("HeartOfThorns", dailies.pve[i].required_access) > -1) {
+                        categories.pveHoT.push(dailies.pve[i].id);
+                    }
 
-                    // Check if achievement is available for core / F2P accounts
-                    /*if ($.inArray("GuildWars2", dailies.pve[i].required_access) > -1) {
+                    // Check if achievement is available for PvE
+                    if ($.inArray("GuildWars2", dailies.pve[i].required_access) > -1) {
+                        categories.pve.push(dailies.pve[i].id);
+                    }
+
+                    // Check if achievement is flagged as Core achievement
+                    if ($.inArray("Core", dailies.pve[i].required_access) > -1) {
                         categories.pveCore.push(dailies.pve[i].id);
-                    }*/
+                    }
+
                 } else if (dailies.pve[i].level.min == 1) {
                     categories.lowLevel.push(dailies.pve[i].id);
                 }
@@ -152,8 +197,6 @@ function loadDailyData(url, showFractals) {
                 achievementBuffer.push(dailies.special[i].id);
                 categories.special.push(dailies.special[i].id);
             }
-
-
 
             // Fetch achievement details
             $.ajax({
@@ -282,7 +325,7 @@ function fillList() {
         }
     }
 
-    // Player versus environment (Heart of Thorns)
+    // Player versus environment (Core & F2P)
     $("<li data-role='list-divider'>PvE</li>").appendTo(items);
     for (var x = 0; x < categories.pve.length; x++) {
         var id = categories.pve[x];
@@ -290,9 +333,30 @@ function fillList() {
     }
 
     // Player versus environment (Core & F2P)
-    $("<li data-role='list-divider'>PvE (Core &amp; Free to Play)</li>").appendTo(items);
+    var coreTitle = "Core & F2P";
+    if (categories.pveHoT.length == 0 && categories.pvePoF.length > 0) {
+        coreTitle = "Core, F2P & Heart of Thorns";
+    } else if (categories.pveHoT.length > 0 && categories.pvePoF.length == 0) {
+        coreTitle = "Core, F2P & Path of Fire";
+    }
+
+    $("<li data-role='list-divider'>" + coreTitle + "</li>").appendTo(items);
     for (var x = 0; x < categories.pveCore.length; x++) {
         var id = categories.pveCore[x];
+        createEntry(achievementsDict[id]).appendTo(items);
+    }
+
+    // Player versus environment (Heart of Thorns)
+    $("<li data-role='list-divider'>Heart of Thorns</li>").appendTo(items);
+    for (var x = 0; x < categories.pveHoT.length; x++) {
+        var id = categories.pveHoT[x];
+        createEntry(achievementsDict[id]).appendTo(items);
+    }
+
+    // Player versus environment (Path of Fire)
+    $("<li data-role='list-divider'>Path of Fire</li>").appendTo(items);
+    for (var x = 0; x < categories.pvePoF.length; x++) {
+        var id = categories.pvePoF[x];
         createEntry(achievementsDict[id]).appendTo(items);
     }
 
