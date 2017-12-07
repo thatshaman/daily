@@ -118,7 +118,7 @@ function loadDailyData(url, showFractals) {
                     dailies.pve[i].required_access = ["GuildWars2"];
                 }
             }
-            
+
             if (hasPoFDaily || hasHoTDaily) {
                 dailies.pve[lowestCoreId].required_access = ["Core"];
             }
@@ -321,7 +321,7 @@ function fillList() {
         $("<li data-role='list-divider'>Special</li>").appendTo(items);
         for (var x = 0; x < categories.special.length; x++) {
             var id = categories.special[x];
-            createEntry(achievementsDict[id]).appendTo(items);
+            createEntry(achievementsDict[id], id).appendTo(items);
         }
     }
 
@@ -329,7 +329,7 @@ function fillList() {
     $("<li data-role='list-divider'>PvE</li>").appendTo(items);
     for (var x = 0; x < categories.pve.length; x++) {
         var id = categories.pve[x];
-        createEntry(achievementsDict[id]).appendTo(items);
+        createEntry(achievementsDict[id], id).appendTo(items);
     }
 
     // Player versus environment (Core & F2P)
@@ -343,42 +343,42 @@ function fillList() {
     $("<li data-role='list-divider'>" + coreTitle + "</li>").appendTo(items);
     for (var x = 0; x < categories.pveCore.length; x++) {
         var id = categories.pveCore[x];
-        createEntry(achievementsDict[id]).appendTo(items);
+        createEntry(achievementsDict[id], id).appendTo(items);
     }
 
     // Player versus environment (Heart of Thorns)
     $("<li data-role='list-divider'>Heart of Thorns</li>").appendTo(items);
     for (var x = 0; x < categories.pveHoT.length; x++) {
         var id = categories.pveHoT[x];
-        createEntry(achievementsDict[id]).appendTo(items);
+        createEntry(achievementsDict[id], id).appendTo(items);
     }
 
     // Player versus environment (Path of Fire)
     $("<li data-role='list-divider'>Path of Fire</li>").appendTo(items);
     for (var x = 0; x < categories.pvePoF.length; x++) {
         var id = categories.pvePoF[x];
-        createEntry(achievementsDict[id]).appendTo(items);
+        createEntry(achievementsDict[id], id).appendTo(items);
     }
 
     // World vs World
     $("<li data-role='list-divider'>WvW</li>").appendTo(items);
     for (var x = 0; x < categories.wvw.length; x++) {
         var id = categories.wvw[x];
-        createEntry(achievementsDict[id]).appendTo(items);
+        createEntry(achievementsDict[id], id).appendTo(items);
     }
 
     // Player vs Player
     $("<li data-role='list-divider'>PvP</li>").appendTo(items);
     for (var x = 0; x < categories.pvp.length; x++) {
         var id = categories.pvp[x];
-        createEntry(achievementsDict[id]).appendTo(items);
+        createEntry(achievementsDict[id], id).appendTo(items);
     }
 
     // Low level (up to level 10)
     $("<li data-role='list-divider'>Low Level</li>").appendTo(items);
     for (var x = 0; x < categories.lowLevel.length; x++) {
         var id = categories.lowLevel[x];
-        createEntry(achievementsDict[id]).appendTo(items);
+        createEntry(achievementsDict[id], id).appendTo(items);
     }
 
     // Fractals of the Mists
@@ -391,12 +391,16 @@ function fillList() {
         for (var x = 0; x < categories.fractals.length; x++) {
             var id = categories.fractals[x];
             var achievement = achievementsDict[id];
-            var fractalEntry = createEntry(achievement);
+            var fractalEntry = createEntry(achievement, id);
+            createEntry(achievementsDict[id], id).appendTo(items);
+            if (achievement === undefined) {
 
-            if (achievement.dailyType == 'fractalRecommended') {
-                recs.push(fractalEntry);
-            } else if (achievement.dailyType == 'fractalTier') {
-                tiers.push(fractalEntry);
+            } else {
+                if (achievement.dailyType == 'fractalRecommended') {
+                    recs.push(fractalEntry);
+                } else if (achievement.dailyType == 'fractalTier') {
+                    tiers.push(fractalEntry);
+                }
             }
         }
 
@@ -414,48 +418,52 @@ function fillList() {
     items.listview("refresh");
 }
 
-function createEntry(achievement) {
+function createEntry(achievement, id) {
     /// <summary>Generate a ListView item</summary>
     /// <param name="achievement" type="Integer">The Id of the achievement.</param>
     /// <returns type="Object">ListViewItem</returns>
 
     // TODO: clean these temporary things up and convert everything to CSS
-
     var retval = $("<li data-iconpos='right' data-icon=''/>");
-    var icon = achievement.icon || "https://render.guildwars2.com/file/483E3939D1A7010BDEA2970FB27703CAAD5FBB0F/42684.png";
 
-    var title = "<img src='" + icon + "' style='float:left' /> <span class='title'>" + achievement.name + "</span>";
-    var subtitle = "<span class='subtitle'>" + achievement.requirement + "</span>";
-    if (subtitle.length > 128) subtitle = subtitle.substring(0, 128) + '...';
-    var details = "";
+    if (achievement === undefined) {
+        retval.html("<h2><img src='https://render.guildwars2.com/file/A5DE06130C0D1E2C9A9780EAD037E61462B1E825/102597.png' style='float:left; height:20px' /> Unknown Daily Achievement<br/><div></h2><div style='white-space:normal !important;'>Achievement " + id + " is missing on the API</div>");
+    } else {
 
-    details += achievement.requirement + "<br/>";
-    if (achievement.description.length > 0) details += "<i>- " + achievement.description + "</i><br/>";
+        var icon = achievement.icon || "https://render.guildwars2.com/file/483E3939D1A7010BDEA2970FB27703CAAD5FBB0F/42684.png";
+        var title = "<img src='" + icon + "' style='float:left' /> <span class='title'>" + achievement.name + "</span>";
+        var subtitle = "<span class='subtitle'>" + achievement.requirement + "</span>";
+        if (subtitle.length > 128) subtitle = subtitle.substring(0, 128) + '...';
+        var details = "";
 
-    details += "<br/><div class='achievementDetails'>";
-    if (achievement.tiers[0].count > 1) details += "<b>Required:</b> " + achievement.tiers[0].count + "<br/>";
-    if (achievement.tiers[0].points > 0) details += "<b>Achievement Points:</b> " + achievement.tiers[0].points + "<br/>";
+        details += achievement.requirement + "<br/>";
+        if (achievement.description.length > 0) details += "<i>- " + achievement.description + "</i><br/>";
 
-    if (achievement.rewards.length > 0) {
-        for (var i = 0; i < achievement.rewards.length; i++) {
-            var reward = getReward(achievement.rewards[i].id);
+        details += "<br/><div class='achievementDetails'>";
+        if (achievement.tiers[0].count > 1) details += "<b>Required:</b> " + achievement.tiers[0].count + "<br/>";
+        if (achievement.tiers[0].points > 0) details += "<b>Achievement Points:</b> " + achievement.tiers[0].points + "<br/>";
 
-            details += "<b>Reward:</b> <img src='" + reward.icon + "' style='width: 16px; height: 16px;'/> ";
+        if (achievement.rewards.length > 0) {
+            for (var i = 0; i < achievement.rewards.length; i++) {
+                var reward = getReward(achievement.rewards[i].id);
 
-            // English will search by item chat code, other languages will search by name
-            if (lang == "en") {
-                details += "<a href='" + wikiUrls[lang] + "/?search=" + escape(reward.chat_link) + "' target='_blank'>" + reward.name + "</a>";
-            } else {
-                details += "<a href='" + wikiUrls[lang] + escape(reward.name) + "' target='_blank'>" + reward.name + "</a>";
+                details += "<b>Reward:</b> <img src='" + reward.icon + "' style='width: 16px; height: 16px;'/> ";
+
+                // English will search by item chat code, other languages will search by name
+                if (lang == "en") {
+                    details += "<a href='" + wikiUrls[lang] + "/?search=" + escape(reward.chat_link) + "' target='_blank'>" + reward.name + "</a>";
+                } else {
+                    details += "<a href='" + wikiUrls[lang] + escape(reward.name) + "' target='_blank'>" + reward.name + "</a>";
+                }
+
+                if (achievement.rewards[i].count > 1) details += " (" + achievement.rewards[i].count + ")";
+                details += "<br/>";
             }
-
-            if (achievement.rewards[i].count > 1) details += " (" + achievement.rewards[i].count + ")";
-            details += "<br/>";
         }
-    }
-    details += "</div>";
+        details += "</div>";
 
-    retval.html("<h2>" + title + "<br/>" + subtitle + "<div></h2><div style='white-space:normal !important;'>" + details + "</div>");
-    retval.collapsible();
+        retval.html("<h2>" + title + "<br/>" + subtitle + "<div></h2><div style='white-space:normal !important;'>" + details + "</div>");
+        retval.collapsible();
+    }
     return retval;
 }
