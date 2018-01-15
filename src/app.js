@@ -106,22 +106,8 @@ function loadDailyData(url, showFractals) {
                     lowestCoreId = i;
                 }
 
-                if (dailies.pve[i].id > 2800 && dailies.pve[i].id < 3100) {
-                    if ($.inArray(dailies.pve[i].id, dungeons) == -1) {
-                        dailies.pve[i].required_access = ["HeartOfThorns"];
-                        hasHoTDaily = true;
-                    }
-                } else if (dailies.pve[i].id > 3100) {
-                    dailies.pve[i].required_access = ["PathOfFire"];
-                    hasPoFDaily = true;
-                } else {
-                    dailies.pve[i].required_access = ["GuildWars2"];
-                }
             }
 
-            if (hasPoFDaily || hasHoTDaily) {
-                dailies.pve[lowestCoreId].required_access = ["Core"];
-            }
 
             //
             //
@@ -136,23 +122,22 @@ function loadDailyData(url, showFractals) {
                 if (dailies.pve[i].level.max == 80) {
 
                     // Check if achievement is available for HoT accounts
-                    if ($.inArray("PathOfFire", dailies.pve[i].required_access) > -1) {
+                    if ($.inArray("PathOfFire", dailies.pve[i].required_access) > -1 && dailies.pve[i].required_access.length == 1) {
                         categories.pvePoF.push(dailies.pve[i].id);
                     }
 
                     // Check if achievement is available for HoT accounts
-                    if ($.inArray("HeartOfThorns", dailies.pve[i].required_access) > -1) {
+                    if ($.inArray("HeartOfThorns", dailies.pve[i].required_access) > -1 && dailies.pve[i].required_access.length == 1) {
                         categories.pveHoT.push(dailies.pve[i].id);
                     }
 
                     // Check if achievement is available for PvE
                     if ($.inArray("GuildWars2", dailies.pve[i].required_access) > -1) {
-                        categories.pve.push(dailies.pve[i].id);
-                    }
-
-                    // Check if achievement is flagged as Core achievement
-                    if ($.inArray("Core", dailies.pve[i].required_access) > -1) {
-                        categories.pveCore.push(dailies.pve[i].id);
+                        if (dailies.pve[i].required_access.length == 3) {
+                            categories.pve.push(dailies.pve[i].id);
+                        } else {
+                            categories.pveCore.push(dailies.pve[i].id);
+                        }
                     }
 
                 } else if (dailies.pve[i].level.min == 1) {
