@@ -1,6 +1,6 @@
 ﻿// API endpoints
-var dailyURLToday = "https://api.guildwars2.com/v2/achievements/daily";
-var dailyURLTomorrow = "https://api.guildwars2.com/v2/achievements/daily/tomorrow";
+var dailyURLToday = "https://api.guildwars2.com/v2/achievements/daily/tomorrow?v=2019-05-17T00:00:00Z";
+var dailyURLTomorrow = "https://api.guildwars2.com/v2/achievements/daily/tomorrow?v=2019-05-17T00:00:00Z";
 var achievementsURL = "https://api.guildwars2.com/v2/achievements";
 var rewardsURL = "https://api.guildwars2.com/v2/items";
 
@@ -21,13 +21,13 @@ var categories = {};
 
 // Regular expressions used to determine fractal names
 var fractalsRegex =
-    {
-        "en": [/^Daily Recommended Fractal—Scale (\d+)$/i],
-        "de": [/^Empfohlenes tägliches Fraktal: Schwierigkeitsgrad (\d+)$/i],
-        "fr": ["Unicode mess.. use alternate"],
-        "es": [/^Fractal diario recomendado: escala (\d+)$/i, /^Fractal del día recomendado: escala (\d+)$/i],
-        "zh": ["Not implemented"],
-    }
+{
+    "en": [/^Daily Recommended Fractal—Scale (\d+)$/i],
+    "de": [/^Empfohlenes tägliches Fraktal: Schwierigkeitsgrad (\d+)$/i],
+    "fr": ["Unicode mess.. use alternate"],
+    "es": [/^Fractal diario recomendado: escala (\d+)$/i, /^Fractal del día recomendado: escala (\d+)$/i],
+    "zh": ["Not implemented"]
+};
 
 // Fixed Id's for world boss achievements
 var bosses = [2025, 1930, 1933, 1934, 2026, 1935];
@@ -101,7 +101,7 @@ function loadDailyData(url, showFractals) {
 
             for (var i = 0; i < dailies.pve.length; i++) {
 
-                if (dailies.pve[i].level.max == 80 && dailies.pve[i].level.min < lowestCoreLevel) {
+                if (dailies.pve[i].level.max === 80 && dailies.pve[i].level.min < lowestCoreLevel) {
                     lowestCoreLevel = dailies.pve[i].level.min;
                     lowestCoreId = i;
                 }
@@ -119,28 +119,28 @@ function loadDailyData(url, showFractals) {
                 achievementBuffer.push(dailies.pve[i].id);
 
                 // Check if achievement is available for max level characters
-                if (dailies.pve[i].level.max == 80) {
+                if (dailies.pve[i].level.max === 80) {
 
                     // Check if achievement is available for HoT accounts
-                    if ($.inArray("PathOfFire", dailies.pve[i].required_access) > -1 && dailies.pve[i].required_access.length == 1) {
+                    if ($.inArray("PathOfFire", dailies.pve[i].required_access) > -1 && dailies.pve[i].required_access.length === 1) {
                         categories.pvePoF.push(dailies.pve[i].id);
                     }
 
                     // Check if achievement is available for HoT accounts
-                    if ($.inArray("HeartOfThorns", dailies.pve[i].required_access) > -1 && dailies.pve[i].required_access.length == 1) {
+                    if ($.inArray("HeartOfThorns", dailies.pve[i].required_access) > -1 && dailies.pve[i].required_access.length === 1) {
                         categories.pveHoT.push(dailies.pve[i].id);
                     }
 
                     // Check if achievement is available for PvE
                     if ($.inArray("GuildWars2", dailies.pve[i].required_access) > -1) {
-                        if (dailies.pve[i].required_access.length == 3) {
+                        if (dailies.pve[i].required_access.length === 3) {
                             categories.pve.push(dailies.pve[i].id);
                         } else {
                             categories.pveCore.push(dailies.pve[i].id);
                         }
                     }
 
-                } else if (dailies.pve[i].level.min == 1) {
+                } else if (dailies.pve[i].level.min === 1) {
                     categories.lowLevel.push(dailies.pve[i].id);
                 }
             }
@@ -149,11 +149,11 @@ function loadDailyData(url, showFractals) {
             for (var i = 0; i < dailies.wvw.length; i++) {
                 achievementBuffer.push(dailies.wvw[i].id);
 
-                if (dailies.wvw[i].level.max == 80) {
+                if (dailies.wvw[i].level.max === 80) {
                     categories.wvw.push(dailies.wvw[i].id);
                 }
 
-                if (dailies.wvw[i].level.min == 1) {
+                if (dailies.wvw[i].level.min === 1) {
                     categories.lowLevel.push(dailies.wvw[i].id);
                 }
             }
@@ -162,11 +162,11 @@ function loadDailyData(url, showFractals) {
             for (var i = 0; i < dailies.pvp.length; i++) {
                 achievementBuffer.push(dailies.pvp[i].id);
 
-                if (dailies.pvp[i].level.max == 80) {
+                if (dailies.pvp[i].level.max === 80) {
                     categories.pvp.push(dailies.pvp[i].id);
                 }
 
-                if (dailies.pvp[i].level.min == 1) {
+                if (dailies.pvp[i].level.min === 1) {
                     categories.lowLevel.push(dailies.pvp[i].id);
                 }
             }
@@ -195,14 +195,14 @@ function loadDailyData(url, showFractals) {
 
                         // Parse fractal names for daily recommended fractals.
                         var scale = null;
-                        if (lang == "en" || lang == "de" || lang == "es") {
+                        if (lang === "en" || lang === "de" || lang === "es") {
                             for (var i = 0; i < fractalsRegex[lang].length; i++) {
                                 scale = achievements[a].name.match(fractalsRegex[lang][i]);
                                 if (scale != null) {
                                     achievements[a].requirement = fractalNames[lang][parseInt(scale[scale.length - 1])] + " - " + achievements[a].requirement;
                                 }
                             }
-                        } else if (lang == "fr") {
+                        } else if (lang === "fr") {
 
                             // French unicode output is a mess..
                             if (achievements[a].name.replace(/[^\w\s]/gi, '').indexOf("Fractale quotidienne") > -1) {
@@ -229,7 +229,7 @@ function loadDailyData(url, showFractals) {
 
                             for (var i = 0; i < bits.length; i++) {
                                 var scaleText = bits[i].text;
-                                if (i == 0) {
+                                if (i === 0) {
                                     scales.push(scaleText);
                                 } else {
                                     scales.push(bits[i].text.match(scaleRegex));
@@ -278,7 +278,7 @@ function getReward(id) {
     /// <returns type="Object">Guild Wars 2 Item</returns>
 
     for (var i = 0; i < rewards.length; i++) {
-        if (rewards[i].id == id) {
+        if (rewards[i].id === id) {
             return rewards[i];
             break;
         }
@@ -319,9 +319,9 @@ function fillList() {
 
     // Player versus environment (Core & F2P)
     var coreTitle = "Core & F2P";
-    if (categories.pveHoT.length == 0 && categories.pvePoF.length > 0) {
+    if (categories.pveHoT.length === 0 && categories.pvePoF.length > 0) {
         coreTitle = "Core, F2P & Heart of Thorns";
-    } else if (categories.pveHoT.length > 0 && categories.pvePoF.length == 0) {
+    } else if (categories.pveHoT.length > 0 && categories.pvePoF.length === 0) {
         coreTitle = "Core, F2P & Path of Fire";
     }
 
@@ -381,9 +381,9 @@ function fillList() {
             if (achievement === undefined) {
 
             } else {
-                if (achievement.dailyType == 'fractalRecommended') {
+                if (achievement.dailyType === 'fractalRecommended') {
                     recs.push(fractalEntry);
-                } else if (achievement.dailyType == 'fractalTier') {
+                } else if (achievement.dailyType === 'fractalTier') {
                     tiers.push(fractalEntry);
                 }
             }
@@ -435,7 +435,7 @@ function createEntry(achievement, id) {
                 details += "<b>Reward:</b> <img src='" + reward.icon + "' style='width: 16px; height: 16px;'/> ";
 
                 // English will search by item chat code, other languages will search by name
-                if (lang == "en") {
+                if (lang === "en") {
                     details += "<a href='" + wikiUrls[lang] + "/?search=" + escape(reward.chat_link) + "' target='_blank'>" + reward.name + "</a>";
                 } else {
                     details += "<a href='" + wikiUrls[lang] + escape(reward.name) + "' target='_blank'>" + reward.name + "</a>";
